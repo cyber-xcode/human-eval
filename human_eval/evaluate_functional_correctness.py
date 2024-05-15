@@ -1,4 +1,5 @@
 import fire
+import os
 import sys
 
 from human_eval.data import HUMAN_EVAL
@@ -7,7 +8,7 @@ from human_eval.evaluation import evaluate_functional_correctness
 
 def entry_point(
     sample_file: str,
-    k: str = "1,10,100",
+    k: str = "1,3,10,20",
     n_workers: int = 4,
     timeout: float = 3.0,
     problem_file: str = HUMAN_EVAL,
@@ -16,6 +17,9 @@ def entry_point(
     Evaluates the functional correctness of generated samples, and writes
     results to f"{sample_file}_results.jsonl.gz"
     """
+    if os.path.isfile(  sample_file + "_results.jsonl" ):
+        print ("exist",  sample_file + "_results.jsonl" )
+        exit(0)
     k = list(map(int, k.split(",")))
     results = evaluate_functional_correctness(sample_file, k, n_workers, timeout, problem_file)
     print(results)

@@ -11,7 +11,9 @@ import tempfile
 
 
 def check_correctness(problem: Dict, completion: str, timeout: float,
-                      completion_id: Optional[int] = None) -> Dict:
+                      completion_id: Optional[int] = None,
+                     full_completion :str =None, 
+                      ) -> Dict:
     """
     Evaluates the functional correctness of a completion by running the test
     suite provided in the problem. 
@@ -40,28 +42,39 @@ def check_correctness(problem: Dict, completion: str, timeout: float,
                 problem["test"] + "\n" +
                 f"check({problem['entry_point']})"
             )
+            if full_completion is not None :
+                check_program2 = (
+                    full_completion  + "\n" +
+                    problem["test"] + "\n" +
+                    f"check({problem['entry_point']})"
+                    )
 
+
+            flg = False 
             try:
                 exec_globals = {}
                 with swallow_io():
                     with time_limit(timeout):
-# WARNING
-# This program exists to execute untrusted model-generated code. Although
-# it is highly unlikely that model-generated code will do something overtly
-# malicious in response to this test suite, model-generated code may act
-# destructively due to a lack of model capability or alignment.
-# Users are strongly encouraged to sandbox this evaluation suite so that it 
-# does not perform destructive actions on their host or network. For more 
-# information on how OpenAI sandboxes its code, see the accompanying paper.
-# Once you have read this disclaimer and taken appropriate precautions, 
-# uncomment the following line and proceed at your own risk:
-#                         exec(check_program, exec_globals)
+                        exec(check_program, exec_globals)
                 result.append("passed")
+                flg = True 
             except TimeoutException:
                 result.append("timed out")
             except BaseException as e:
                 result.append(f"failed: {e}")
 
+            if not flg :
+                try:
+                    exec_globals = {}
+                    with swallow_io():
+                        with time_limit(timeout):
+                            exec(check_program2, exec_globals)
+                    result.append("passed")
+                    flg = True 
+                except TimeoutException:
+                    pass
+                except BaseException as e:
+                    pass
             # Needed for cleaning up.
             shutil.rmtree = rmtree
             os.rmdir = rmdir

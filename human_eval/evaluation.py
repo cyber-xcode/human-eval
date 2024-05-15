@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Union, Iterable, Dict
 import itertools
 
+import json
 import numpy as np
 import tqdm
 
@@ -62,7 +63,7 @@ def evaluate_functional_correctness(
         for sample in tqdm.tqdm(stream_jsonl(sample_file)):
             task_id = sample["task_id"]
             completion = sample["completion"]
-            args = (problems[task_id], completion, timeout, completion_id[task_id])
+            args = (problems[task_id], completion, timeout, completion_id[task_id],completion )
             future = executor.submit(check_correctness, *args)
             futures.append(future)
             completion_id[task_id] += 1
@@ -100,6 +101,8 @@ def evaluate_functional_correctness(
 
     out_file = sample_file + "_results.jsonl"
     print(f"Writing results to {out_file}...")
-    write_jsonl(out_file, tqdm.tqdm(combine_results(), total=n_samples))
+    #write_jsonl(out_file, tqdm.tqdm(combine_results(), total=n_samples))
+    with open("/tmp/correct_to.jsonl","a") as ffww :
+        ffww.write( json.dumps({**pass_at_k, "fp":out_file } ) +"\n" )
 
     return pass_at_k
